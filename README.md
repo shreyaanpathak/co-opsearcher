@@ -1,2 +1,2 @@
-# co-opsearcher
+# CoOpSearch.com
 CO-OP/Intern Searcher

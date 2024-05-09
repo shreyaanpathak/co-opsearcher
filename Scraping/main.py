@@ -84,6 +84,3 @@ def indeedtest():
 
 
 indeedtest()
-
-def main():
-    

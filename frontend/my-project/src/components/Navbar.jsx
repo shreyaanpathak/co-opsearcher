@@ -1,176 +1,167 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useDragControls } from 'framer-motion';
-import { FaBars } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useLocation } from 'react-router-dom';
+import { FaCompass, FaBars, FaTimes, FaSearch } from 'react-icons/fa';
 
-function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [typewriterText, setTypewriterText] = useState('');
-  const greetings = ["Internships", "Co-Ops", "Jobs", "Life"];
-  const [currentGreetingIndex, setCurrentGreetingIndex] = useState(0);
-  const dragControls = useDragControls();
-  const buttonRef = useRef(null);
-  const [buttonPosition, setButtonPosition] = useState(() => {
-    const saved = localStorage.getItem('sidebarButtonPosition');
-    return saved ? JSON.parse(saved) : { y: window.innerHeight / 2 };
-  });
-
-  const navItems = [
-    { name: 'Intro', emoji: '🌟', id: 'intro' },
-  ];
+const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [searchActive, setSearchActive] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
-    const typeWriter = (text, i = 0) => {
-      if (i < text.length) {
-        setTypewriterText(text.substring(0, i + 1));
-        setTimeout(() => typeWriter(text, i + 1), 100);
-      } else {
-        setTimeout(() => {
-          setTypewriterText('');
-          setCurrentGreetingIndex((prevIndex) => (prevIndex + 1) % greetings.length);
-        }, 10000);
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      if (isScrolled !== scrolled) {
+        setScrolled(isScrolled);
       }
     };
 
-    typeWriter(greetings[currentGreetingIndex]);
-  }, [currentGreetingIndex]);
+    document.addEventListener('scroll', handleScroll, { passive: true });
 
-  useEffect(() => {
-    localStorage.setItem('sidebarButtonPosition', JSON.stringify(buttonPosition));
-  }, [buttonPosition]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (buttonRef.current) {
-        const buttonHeight = buttonRef.current.offsetHeight;
-        const maxY = window.innerHeight - buttonHeight;
-        setButtonPosition(prev => ({
-          y: Math.min(Math.max(prev.y, 0), maxY)
-        }));
-      }
+    return () => {
+      document.removeEventListener('scroll', handleScroll);
     };
+  }, [scrolled]);
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const navbarClasses = `fixed w-full z-30 transition-all duration-300 ${
+    scrolled ? 'bg-blue-900 shadow-lg' : 'bg-transparent'
+  }`;
 
-  const handleDragEnd = (event, info) => {
-    if (buttonRef.current) {
-      const buttonHeight = buttonRef.current.offsetHeight;
-      const maxY = window.innerHeight - buttonHeight;
-      const newY = Math.min(Math.max(info.point.y, 0), maxY);
-      setButtonPosition({ y: newY });
-    }
-  };
+  const linkClasses = `text-lg font-medium ${
+    scrolled ? 'text-white hover:text-yellow-400' : 'text-blue-100 hover:text-white'
+  } transition-colors duration-300`;
 
   return (
-    <>
-      <motion.button
-        ref={buttonRef}
-        drag="y"
-        dragControls={dragControls}
-        dragMomentum={false}
-        dragConstraints={{
-          top: 0,
-          bottom: buttonRef.current ? window.innerHeight - buttonRef.current.offsetHeight : window.innerHeight
-        }}
-        onDragEnd={handleDragEnd}
-        initial={buttonPosition}
-        animate={buttonPosition}
-        style={{ position: 'fixed', left: 0 }}
-        className="z-50 text-white p-2 rounded-r-lg cursor-ns-resize bg-gray-800"
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-      >
-        <FaBars />
-      </motion.button>
-
-      <motion.nav
-        initial={{ x: '-100%' }}
-        animate={{ x: isMenuOpen ? 0 : '-100%' }}
-        transition={{ duration: 0.3 }}
-        className="fixed left-0 top-0 h-full w-64 bg-black text-white p-6 z-40 overflow-y-auto"
-      >
-        <div className="flex flex-col h-full">
+    <nav className={navbarClasses}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center mb-8"
+            className="flex-shrink-0 flex items-center"
           >
-            <div className="bg-gray-900 rounded-lg px-7 w-full h-12 items-center text-base font-bold relative group block py-2">
-              <h1 className="text-xl text-white font-bold">
-                Co-Op Searcher
-              </h1>
+            <Link to="/" className="flex items-center">
+              <FaCompass className={`h-8 w-8 ${scrolled ? 'text-yellow-400' : 'text-white'}`} />
+              <span className={`ml-2 text-xl font-bold ${scrolled ? 'text-white' : 'text-blue-100'}`}>Co-Op Searcher</span>
+            </Link>
+          </motion.div>
+          
+          {/* Center the navigation links */}
+          <div className="hidden md:flex flex-grow justify-center">
+            <div className="flex items-center space-x-4">
+              <NavLink to="/" className={linkClasses} isActive={location.pathname === "/"}>Home</NavLink>
+              <NavLink to="/internships" className={linkClasses} isActive={location.pathname === "/internships"}>Internships</NavLink>
+              <NavLink to="/companies" className={linkClasses} isActive={location.pathname === "/companies"}>Companies</NavLink>
+              <NavLink to="/resources" className={linkClasses} isActive={location.pathname === "/resources"}>Resources</NavLink>
+            </div>
+          </div>
+          
+          <div className="hidden md:flex items-center space-x-4">
+            <motion.div
+              initial={false}
+              animate={{ width: searchActive ? 200 : 40 }}
+              className="relative"
+            >
+              <input
+                type="text"
+                placeholder="Search..."
+                className={`bg-blue-800 text-white rounded-full py-2 px-4 focus:outline-none ${
+                  searchActive ? 'w-full' : 'w-10'
+                } transition-all duration-300`}
+                onFocus={() => setSearchActive(true)}
+                onBlur={() => setSearchActive(false)}
+              />
+              <FaSearch className="absolute right-3 top-3 text-white" />
+            </motion.div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-yellow-400 text-blue-900 px-4 py-2 rounded-md text-sm font-medium hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+            >
+              Sign Up
+            </motion.button>
+          </div>
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className={`inline-flex items-center justify-center p-2 rounded-md ${
+                scrolled ? 'text-white hover:text-yellow-400 hover:bg-blue-800' : 'text-blue-100 hover:text-white hover:bg-blue-700'
+              } focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white`}
+            >
+              <span className="sr-only">Open main menu</span>
+              {isOpen ? (
+                <FaTimes className="block h-6 w-6" aria-hidden="true" />
+              ) : (
+                <FaBars className="block h-6 w-6" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden bg-blue-900"
+          >
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+              <MobileNavLink to="/" onClick={() => setIsOpen(false)} isActive={location.pathname === "/"}>Home</MobileNavLink>
+              <MobileNavLink to="/internships" onClick={() => setIsOpen(false)} isActive={location.pathname === "/internships"}>Internships</MobileNavLink>
+              <MobileNavLink to="/companies" onClick={() => setIsOpen(false)} isActive={location.pathname === "/companies"}>Companies</MobileNavLink>
+              <MobileNavLink to="/resources" onClick={() => setIsOpen(false)} isActive={location.pathname === "/resources"}>Resources</MobileNavLink>
+            </div>
+            <div className="pt-4 pb-3 border-t border-blue-800">
+              <div className="flex items-center px-5 mb-3">
+                <div className="flex-grow">
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full bg-blue-800 text-white rounded-full py-2 px-4 focus:outline-none"
+                  />
+                </div>
+                <FaSearch className="ml-2 text-white" />
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-blue-900 bg-yellow-400 hover:bg-yellow-300"
+              >
+                Sign Up
+              </motion.button>
             </div>
           </motion.div>
-
-          <div className="flex-grow">
-            {navItems.map((item, index) => (
-              <NavItem key={index} item={item} />
-            ))}
-          </div>
-
-          <div className="mt-auto">
-            <div className="text-2xl font-bold text-gray-500 mb-4">
-              {typewriterText}
-              <span className="animate-blink">|</span>
-            </div>
-          </div>
-        </div>
-      </motion.nav>
-    </>
+        )}
+      </AnimatePresence>
+    </nav>
   );
-}
+};
 
-function NavItem({ item }) {
-  return (
-    <motion.a
-      href={`#${item.id}`}
-      className="text-base font-bold relative group block py-2"
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-    >
-      <span className="text-gray-500">
-        {item.name}
-      </span>
-      {' '}
-      <span>{item.emoji}</span>
-      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-500 transition-all group-hover:w-full"></span>
-    </motion.a>
-  );
-}
+const NavLink = ({ to, children, className, isActive }) => (
+  <Link
+    to={to}
+    className={`${className} ${isActive ? 'text-yellow-400' : ''}`}
+  >
+    {children}
+  </Link>
+);
 
-function TopBar() {
-  return (
-    <motion.div
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 100 }}
-      className="fixed top-0 left-0 right-0 bg-black h-20 flex items-center justify-center z-30 rounded-b-lg"
-    >
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-        className="flex space-x-8"
-      >
-        <div className="flex justify-center items-center bg-gray-900 rounded-lg w-full h-12 px-6">
-          <div className="font-bold text-2xl text-white">
-            Co-OpSearcher
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
+const MobileNavLink = ({ to, children, onClick, isActive }) => (
+  <Link
+    to={to}
+    className={`block px-3 py-2 rounded-md text-base font-medium ${
+      isActive ? 'bg-blue-800 text-yellow-400' : 'text-white hover:bg-blue-800 hover:text-yellow-400'
+    }`}
+    onClick={onClick}
+  >
+    {children}
+  </Link>
+);
 
-export default function Layout({ children }) {
-  return (
-    <>
-      <TopBar />
-      <Navbar />
-      <main className="pt-16 bg-white text-black">
-        {children}
-      </main>
-    </>
-  );
-}
+export default Navbar;
